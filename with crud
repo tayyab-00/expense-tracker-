@@ -10,7 +10,7 @@
         <input type="text" id="username" name="username" required><br>
 
         <label for="pass">Description: </label>
-        <input type="text" id="pass" name="password" required><br>
+        <input type text id="pass" name="password" required><br>
 
         <label for="category">Category: </label>
         <input type="text" id="category" name="category" required><br>
@@ -28,59 +28,68 @@
 
         l.addEventListener('submit', userinfo);
 
-        window.onload = function () {
-            axios
-                .get(apiEndpoint)
-                .then(response => {
-                    const data = response.data;
-                    for (const key in data) {
-                        show(data[key]);
-                    }
-                });
-        };
+        async function loadItems() {
+            const response = await axios.get(apiEndpoint);
+            response.data.forEach(show);
+        }
 
-        function userinfo(j) {
+        async function userinfo(j) {
             j.preventDefault();
             const username = document.getElementById("username");
             const password = document.getElementById("pass");
             const category = document.getElementById("category");
-
             const amount = username.value;
             const desc = password.value;
             const cat = category.value;
 
-            const obj = { amount, desc, cat };
-
-            axios
-                .post(apiEndpoint, obj)
-                .then(response => {
+            if (amount && desc && cat) {
+                if (j.target.submit.textContent === "Submit") {
+                    const response = await axios.post(apiEndpoint, { amount, desc, cat });
                     show(response.data);
-                    username.value = "";
-                    password.value = "";
-                    category.value = "";
-                });
+                } else {
+                    await axios.put(apiEndpoint + "/" + j.target.editId.value, { amount, desc, cat });
+                    j.target.submit.textContent = "Submit";
+                }
+                username.value = "";
+                password.value = "";
+                category.value = "";
+                j.target.editId.value = "";
+                loadItems();
+            }
         }
 
         function show(data) {
             const listItem = document.createElement("li");
             listItem.className = 'list-group-item';
-            listItem.textContent = "Amount: $" + data.amount + "  Description: " + data.desc + " Category: " + data.cat;
+            listItem.textContent = `Amount: $${data.amount}  Description: ${data.desc}  Category: ${data.cat}`;
 
             const del = document.createElement("button");
             del.textContent = "Delete";
             del.className = "btn btn-secondary float-right";
 
-            del.addEventListener("click", function () {
+            del.addEventListener("click", async () => {
+                await axios.delete(apiEndpoint + "/" + data._id);
                 listItem.remove();
-                del.remove();
-                axios
-                    .delete(apiEndpoint + "/" + data._id)
-                    .catch(error => console.error(error));
+            });
+
+            const edit = document.createElement("button");
+            edit.textContent = "Edit";
+            edit.className = "btn btn-primary float-right";
+
+            edit.addEventListener("click", () => {
+                document.getElementById("username").value = data.amount;
+                document.getElementById("pass").value = data.desc;
+                document.getElementById("category").value = data.cat;
+                l.editId.value = data._id;
+                l.submit.textContent = "Update";
             });
 
             listItem.appendChild(del);
+            listItem.appendChild(edit);
             listElem.appendChild(listItem);
         }
+
+        loadItems();
     </script>
 </body>
 </html>
