@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Expense Tracker</title>
+</head>
+<body>
+    <form id="loginform">
+        <label for="username">Amount: </label>
+        <input type="text" id="username" name="username" required><br>
+
+        <label for="pass">Description: </label>
+        <input type="text" id="pass" name="password" required><br>
+
+        <label for="category">Category: </label>
+        <input type="text" id="category" name="category" required><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <ul id="items" class="list-group"></ul>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const apiEndpoint = "https://crudcrud.com/api/02368bd050294751a13655cbea7ab164/j";
+        const listElem = document.getElementById("items");
+        const l = document.getElementById("loginform");
+
+        l.addEventListener('submit', userinfo);
+
+        window.onload = function () {
+            axios
+                .get(apiEndpoint)
+                .then(response => {
+                    const data = response.data;
+                    for (const key in data) {
+                        show(data[key]);
+                    }
+                });
+        };
+
+        function userinfo(j) {
+            j.preventDefault();
+            const username = document.getElementById("username");
+            const password = document.getElementById("pass");
+            const category = document.getElementById("category");
+
+            const amount = username.value;
+            const desc = password.value;
+            const cat = category.value;
+
+            const obj = { amount, desc, cat };
+
+            axios
+                .post(apiEndpoint, obj)
+                .then(response => {
+                    show(response.data);
+                    username.value = "";
+                    password.value = "";
+                    category.value = "";
+                });
+        }
+
+        function show(data) {
+            const listItem = document.createElement("li");
+            listItem.className = 'list-group-item';
+            listItem.textContent = "Amount: $" + data.amount + "  Description: " + data.desc + " Category: " + data.cat;
+
+            const del = document.createElement("button");
+            del.textContent = "Delete";
+            del.className = "btn btn-secondary float-right";
+
+            del.addEventListener("click", function () {
+                listItem.remove();
+                del.remove();
+                axios
+                    .delete(apiEndpoint + "/" + data._id)
+                    .catch(error => console.error(error));
+            });
+
+            listItem.appendChild(del);
+            listElem.appendChild(listItem);
+        }
+    </script>
+</body>
+</html>
